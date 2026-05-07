@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Verify Code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-logo">DI</div>
+      <h1>Verify Code</h1>
+      <p>Enter the 6-digit code we sent to your phone</p>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <form id="form" novalidate>
+      <div class="form-group">
+        <label>Verification code</label>
+        <div class="otp-inputs" id="otp">
+          <input inputmode="numeric" maxlength="1" />
+          <input inputmode="numeric" maxlength="1" />
+          <input inputmode="numeric" maxlength="1" />
+          <input inputmode="numeric" maxlength="1" />
+          <input inputmode="numeric" maxlength="1" />
+          <input inputmode="numeric" maxlength="1" />
+        </div>
+        <div class="hint" id="phoneInfo" style="text-align:center;"></div>
+      </div>
+      <button id="btn" type="submit" class="btn btn-primary">
+        <span class="spinner"></span><span class="label">Verify</span>
+      </button>
+      <div class="timer" id="timer"></div>
+      <p class="form-footer">
+        Didn't receive it? <button type="button" id="resend" class="link-button" disabled>Resend</button>
+      </p>
+    </form>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+const phone = UI.qs('phone');
+const purpose = UI.qs('purpose') || 'signup';
+const alertEl = document.getElementById('alert');
+const otp = document.getElementById('otp');
+const btn = document.getElementById('btn');
+const resendBtn = document.getElementById('resend');
+const timerEl = document.getElementById('timer');
+
+if (!phone) { location.href = 'login.html'; }
+document.getElementById('phoneInfo').textContent = `Sent to ${phone}`;
+
+UI.bindOtpInputs(otp, () => document.getElementById('form').dispatchEvent(new Event('submit', { cancelable: true })));
+
+let stopTimer = null;
+function startResendCooldown() {
+  resendBtn.disabled = true;
+  if (stopTimer) stopTimer();
+  stopTimer = UI.startCountdown(timerEl, 60, null, () => { resendBtn.disabled = false; });
+}
+startResendCooldown();
+
+resendBtn.addEventListener('click', async () => {
+  UI.clearAlert(alertEl);
+  try {
+    if (purpose === 'signup') {
+      await API.signupPhone({ name: 'User', phone });
+    } else {
+      await API.requestPhoneOtp(phone);
+    }
+    UI.alert(alertEl, 'info', 'A new code has been sent.');
+    startResendCooldown();
+  } catch (err) {
+    UI.alert(alertEl, 'error', err.message);
+  }
+});
+
+document.getElementById('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const code = UI.getOtpValue(otp);
+  if (code.length !== 6) {
+    UI.alert(alertEl, 'error', 'Enter all 6 digits');
+    return;
+  }
+  UI.clearAlert(alertEl);
+  UI.loading(btn, true);
+  try {
+    const fn = purpose === 'signup' ? API.verifyPhone : API.loginPhone;
+    const data = await fn({ phone, code });
+    API.setTokens(data.data);
+    location.href = 'dashboard.html';
+  } catch (err) {
+    UI.alert(alertEl, 'error', err.message);
+  } finally { UI.loading(btn, false); }
+});
+</script>
+</body>
+</html>

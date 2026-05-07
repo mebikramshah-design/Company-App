@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Create Account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-logo">DI</div>
+      <h1>Create Account</h1>
+      <p>Sign up with email or phone</p>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button id="tabEmail" class="active" type="button">Email</button>
+      <button id="tabPhone" type="button">Phone</button>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <!-- Email signup -->
+    <form id="formEmail" novalidate>
+      <div class="form-group">
+        <label for="nameE">Full name</label>
+        <input id="nameE" name="name" type="text" autocomplete="name" required minlength="2" />
+      </div>
+      <div class="form-group">
+        <label for="emailE">Email address</label>
+        <input id="emailE" name="email" type="email" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label for="passE">Password</label>
+        <input id="passE" name="password" type="password" autocomplete="new-password" required minlength="8" />
+        <div class="hint">Min 8 characters with uppercase, lowercase, and number.</div>
+      </div>
+      <button id="btnEmail" type="submit" class="btn btn-primary">
+        <span class="spinner"></span><span class="label">Create account</span>
+      </button>
+    </form>
+
+    <!-- Phone signup -->
+    <form id="formPhone" novalidate style="display:none;">
+      <div class="form-group">
+        <label for="nameP">Full name</label>
+        <input id="nameP" name="name" type="text" autocomplete="name" required minlength="2" />
+      </div>
+      <div class="form-group">
+        <label for="phoneP">Phone number</label>
+        <input id="phoneP" name="phone" type="tel" autocomplete="tel" placeholder="+14155551234" required />
+        <div class="hint">Use international E.164 format (e.g. +14155551234).</div>
+      </div>
+      <button id="btnPhone" type="submit" class="btn btn-primary">
+        <span class="spinner"></span><span class="label">Send OTP</span>
+      </button>
+    </form>
+
+    <p class="form-footer">Already have an account? <a href="login.html">Sign in</a></p>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+const tabEmail = document.getElementById('tabEmail');
+const tabPhone = document.getElementById('tabPhone');
+const formEmail = document.getElementById('formEmail');
+const formPhone = document.getElementById('formPhone');
+const alertEl = document.getElementById('alert');
+
+tabEmail.onclick = () => {
+  tabEmail.classList.add('active'); tabPhone.classList.remove('active');
+  formEmail.style.display = ''; formPhone.style.display = 'none';
+  UI.clearAlert(alertEl);
+};
+tabPhone.onclick = () => {
+  tabPhone.classList.add('active'); tabEmail.classList.remove('active');
+  formPhone.style.display = ''; formEmail.style.display = 'none';
+  UI.clearAlert(alertEl);
+};
+
+formEmail.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  UI.clearAlert(alertEl);
+  const btn = document.getElementById('btnEmail');
+  UI.loading(btn, true);
+  try {
+    const payload = {
+      name: document.getElementById('nameE').value.trim(),
+      email: document.getElementById('emailE').value.trim(),
+      password: document.getElementById('passE').value,
+    };
+    await API.signupEmail(payload);
+    UI.alert(alertEl, 'success', 'Account created. Please check your email to verify your account.');
+    setTimeout(() => location.href = `verify-email.html?email=${encodeURIComponent(payload.email)}`, 1500);
+  } catch (err) {
+    UI.alert(alertEl, 'error', err.message);
+  } finally { UI.loading(btn, false); }
+});
+
+formPhone.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  UI.clearAlert(alertEl);
+  const btn = document.getElementById('btnPhone');
+  UI.loading(btn, true);
+  try {
+    const payload = {
+      name: document.getElementById('nameP').value.trim(),
+      phone: document.getElementById('phoneP').value.trim(),
+    };
+    await API.signupPhone(payload);
+    location.href = `verify-otp.html?phone=${encodeURIComponent(payload.phone)}&purpose=signup`;
+  } catch (err) {
+    UI.alert(alertEl, 'error', err.message);
+  } finally { UI.loading(btn, false); }
+});
+</script>
+</body>
+</html>
