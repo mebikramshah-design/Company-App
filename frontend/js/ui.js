@@ -63,3 +63,10 @@ window.UI = {
   },
   qs: (name) => new URLSearchParams(window.location.search).get(name),
 };
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.DEMO_MODE) {
+    const b = document.getElementById('demoBadge');
+    if (b) b.style.display = 'block';
+  }
+});
