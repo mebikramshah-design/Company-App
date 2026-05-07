@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isEmployee() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'employee';
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow create: if isSignedIn() && request.auth.uid == uid;
+      allow update: if isSignedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    match /projects/{id} {
+      allow read: if true;
+      allow write: if isEmployee();
+    }
+
+    match /events/{id} {
+      allow read: if true;
+      allow write: if isEmployee();
+    }
+
+    match /announcements/{id} {
+      allow read: if isEmployee();
+      allow write: if isEmployee();
+    }
+
+    match /guest_otp_requests/{id} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+  }
+}
