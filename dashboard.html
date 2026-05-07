@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="demoBadge" class="demo-badge" style="display:none;">DEMO MODE</div>
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-logo">DI</div>
+      <h1>Dashboard</h1>
+      <p id="welcome">Loading…</p>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <div id="profile" style="background:#f5f8fa;border-radius:8px;padding:16px;margin-bottom:16px;font-size:14px;color:var(--navy);"></div>
+
+    <button id="logout" class="btn btn-navy">Log out</button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/mock-api.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+const alertEl = document.getElementById('alert');
+
+(async function () {
+  try {
+    const data = await API.me();
+    const u = data.data.user;
+    document.getElementById('welcome').textContent = `Welcome, ${u.name}`;
+    document.getElementById('profile').innerHTML = `
+      <div><strong>Email:</strong> ${u.email || '—'} ${u.isEmailVerified ? '✓' : ''}</div>
+      <div><strong>Phone:</strong> ${u.phone || '—'} ${u.isPhoneVerified ? '✓' : ''}</div>
+      <div><strong>Role:</strong> ${u.role}</div>
+      <div><strong>Member since:</strong> ${new Date(u.createdAt).toLocaleDateString()}</div>
+    `;
+  } catch (err) {
+    UI.alert(alertEl, 'error', 'Session expired. Please sign in again.');
+    setTimeout(() => location.href = 'login.html', 1200);
+  }
+})();
+
+document.getElementById('logout').addEventListener('click', async () => {
+  try { await API.logout(); } catch (_) {}
+  API.clearTokens();
+  location.href = 'login.html';
+});
+</script>
+</body>
+</html>

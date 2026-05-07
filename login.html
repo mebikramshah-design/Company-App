@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="demoBadge" class="demo-badge" style="display:none;">DEMO MODE</div>
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-logo">DI</div>
+      <h1>Sign In</h1>
+      <p>Welcome back</p>
+    </div>
+
+    <div class="tabs">
+      <button id="tabEmail" class="active" type="button">Email</button>
+      <button id="tabPhone" type="button">Phone</button>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <form id="formEmail" novalidate>
+      <div class="form-group">
+        <label for="emailE">Email address</label>
+        <input id="emailE" type="email" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label for="passE">Password</label>
+        <input id="passE" type="password" autocomplete="current-password" required />
+      </div>
+      <button id="btnEmail" type="submit" class="btn btn-primary">
+        <span class="spinner"></span><span class="label">Sign in</span>
+      </button>
+      <p class="form-footer"><a href="forgot-password.html">Forgot password?</a></p>
+    </form>
+
+    <form id="formPhone" novalidate style="display:none;">
+      <div class="form-group">
+        <label for="phoneP">Phone number</label>
+        <input id="phoneP" type="tel" placeholder="+14155551234" required />
+        <div class="hint">We'll send a verification code by SMS.</div>
+      </div>
+      <button id="btnPhone" type="submit" class="btn btn-primary">
+        <span class="spinner"></span><span class="label">Send code</span>
+      </button>
+    </form>
+
+    <p class="form-footer">Don't have an account? <a href="signup.html">Sign up</a></p>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/mock-api.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+const tabEmail = document.getElementById('tabEmail');
+const tabPhone = document.getElementById('tabPhone');
+const formEmail = document.getElementById('formEmail');
+const formPhone = document.getElementById('formPhone');
+const alertEl = document.getElementById('alert');
+
+tabEmail.onclick = () => { tabEmail.classList.add('active'); tabPhone.classList.remove('active'); formEmail.style.display = ''; formPhone.style.display = 'none'; UI.clearAlert(alertEl); };
+tabPhone.onclick = () => { tabPhone.classList.add('active'); tabEmail.classList.remove('active'); formPhone.style.display = ''; formEmail.style.display = 'none'; UI.clearAlert(alertEl); };
+
+formEmail.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  UI.clearAlert(alertEl);
+  const btn = document.getElementById('btnEmail');
+  UI.loading(btn, true);
+  try {
+    const data = await API.loginEmail({
+      email: document.getElementById('emailE').value.trim(),
+      password: document.getElementById('passE').value,
+    });
+    API.setTokens(data.data);
+    location.href = 'dashboard.html';
+  } catch (err) {
+    UI.alert(alertEl, 'error', err.message);
+  } finally { UI.loading(btn, false); }
+});
+
+formPhone.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  UI.clearAlert(alertEl);
+  const btn = document.getElementById('btnPhone');
+  UI.loading(btn, true);
+  try {
+    const phone = document.getElementById('phoneP').value.trim();
+    await API.requestPhoneOtp(phone);
+    location.href = `verify-otp.html?phone=${encodeURIComponent(phone)}&purpose=login`;
+  } catch (err) {
+    UI.alert(alertEl, 'error', err.message);
+  } finally { UI.loading(btn, false); }
+});
+</script>
+</body>
+</html>

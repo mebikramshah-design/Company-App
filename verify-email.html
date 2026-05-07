@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Verify Email</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="demoBadge" class="demo-badge" style="display:none;">DEMO MODE</div>
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-logo">DI</div>
+      <h1 id="title">Verifying email…</h1>
+      <p id="subtitle">Please wait a moment.</p>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <div id="resendBox" style="display:none;">
+      <p style="text-align:center;color:var(--muted);font-size:14px;margin:0 0 16px;">
+        Need a new link?
+      </p>
+      <form id="resendForm">
+        <div class="form-group">
+          <label for="emailR">Email</label>
+          <input id="emailR" type="email" required />
+        </div>
+        <button id="btnResend" type="submit" class="btn btn-primary">
+          <span class="spinner"></span><span class="label">Resend verification</span>
+        </button>
+      </form>
+    </div>
+
+    <p class="form-footer"><a href="login.html">Back to sign in</a></p>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/mock-api.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script>
+const token = UI.qs('token');
+const emailQs = UI.qs('email');
+const alertEl = document.getElementById('alert');
+const title = document.getElementById('title');
+const subtitle = document.getElementById('subtitle');
+const resendBox = document.getElementById('resendBox');
+
+(async function () {
+  if (!token) {
+    title.textContent = 'Verify your email';
+    subtitle.textContent = 'Check your inbox for a verification link.';
+    if (emailQs) document.getElementById('emailR').value = emailQs;
+    resendBox.style.display = '';
+    return;
+  }
+  try {
+    const data = await API.verifyEmail(token);
+    API.setTokens(data.data);
+    title.textContent = 'Email verified!';
+    subtitle.textContent = 'Redirecting to your dashboard…';
+    UI.alert(alertEl, 'success', 'Your email has been verified successfully.');
+    setTimeout(() => location.href = 'dashboard.html', 1500);
+  } catch (err) {
+    title.textContent = 'Verification failed';
+    subtitle.textContent = 'The link may be invalid or expired.';
+    UI.alert(alertEl, 'error', err.message);
+    if (emailQs) document.getElementById('emailR').value = emailQs;
+    resendBox.style.display = '';
+  }
+})();
+
+document.getElementById('resendForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('btnResend');
+  UI.clearAlert(alertEl);
+  UI.loading(btn, true);
+  try {
+    await API.resendVerification(document.getElementById('emailR').value.trim());
+    UI.alert(alertEl, 'success', 'Verification email sent. Please check your inbox.');
+  } catch (err) {
+    UI.alert(alertEl, 'error', err.message);
+  } finally { UI.loading(btn, false); }
+});
+</script>
+</body>
+</html>
